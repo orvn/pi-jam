@@ -20,8 +20,10 @@ W1_SIZE = BANK_SIZE * 4
 PORTB_BANK = [0xA3, 0xA7, 0xAB, 0xAF]
 PORTB_MAIN = 0xB3
 CODE_START = 0x0D00
+CODE_MEM_SIZE = 0x1300       # filled region size from jamxe.cfg
 RODATA_START = 0x8000
-MAX_SAFE_CODE_END = 0x1BFF
+RODATA_MEM_SIZE = 0x4000     # filled region size from jamxe.cfg
+MAX_SAFE_CODE_END = CODE_START + CODE_MEM_SIZE - 1
 
 
 def seg(start: int, data: bytes) -> bytes:
@@ -71,19 +73,21 @@ def pack(weights_file: str, linker_file: str, map_file: str, output_file: str) -
 
     if len(weights) < W1_SIZE:
         raise SystemExit(f"weights too small: {len(weights)} B")
-    if len(linker) < code_len + hicode_len + rodata_len:
+    expected = CODE_MEM_SIZE + RODATA_MEM_SIZE
+    if len(linker) < expected:
         raise SystemExit(
-            f"linker too small: {len(linker)} B < {code_len + hicode_len + rodata_len} B"
+            f"linker too small: {len(linker)} B < {expected} B"
+        )
+    if code_len > CODE_MEM_SIZE:
+        raise SystemExit(
+            f"CODE segment ({code_len} B) exceeds CODE_MEM region ({CODE_MEM_SIZE} B)"
         )
 
+    # Linker output is two filled regions: CODE_MEM then RODATA (which holds HICODE + RODATA)
     code = linker[:code_len]
-    rodata = linker[code_len : code_len + hicode_len + rodata_len]
+    rodata = linker[CODE_MEM_SIZE : CODE_MEM_SIZE + hicode_len + rodata_len]
 
     code_end = CODE_START + code_len - 1
-    if code_end > MAX_SAFE_CODE_END:
-        raise SystemExit(
-            f"low CODE ends at ${code_end:04X}, above conservative safe limit ${MAX_SAFE_CODE_END:04X}"
-        )
 
     xex = bytearray(b"\xFF\xFF")
     for bank, portb in enumerate(PORTB_BANK):
