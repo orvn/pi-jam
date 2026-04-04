@@ -53,17 +53,8 @@ def main() -> None:
     (ROOT / "weights_xe_main.bin").write_bytes(blob[65536:])
 
     run([ca65, "jamxe.asm", "-o", "jamxe.o"])
-    run([ld65, "-C", "jamxe.cfg", "-m", "jamxe_link.map", "-o", "jamxe_link.xex", "jamxe.o"])
-    run(
-        [
-            sys.executable,
-            "pack_xe_banks.py",
-            str(args.weights),
-            "jamxe_link.xex",
-            "jamxe_link.map",
-            str(dist / "jamxe.xex"),
-        ]
-    )
+    run([ld65, "-C", "jamxe.cfg", "-o", "jamxe_link.xex", "jamxe.o"])
+    run([sys.executable, "pack_xe_banks.py", str(args.weights), "jamxe_link.xex", str(dist / "jamxe.xex")])
     print(f"OK: {dist / 'jamxe.xex'}")
 
 
