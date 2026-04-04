@@ -235,7 +235,11 @@ def train(data_file, out_file="weights_b2s.bin"):
             return [sum(int(W2[r, c]) * hid[c] for c in range(NH)) + int(bi[r]) for r in range(NO)]
 
         tex = make_examples(ps, aug=0)
-        ok = sum(1 for h, t, s in tex if sim1(h, s).index(max(sim1(h, s))) == t)
+        ok = 0
+        for h, t, s in tex:
+            lo = sim1(h, s)
+            if lo.index(max(lo)) == t:
+                ok += 1
         sa = ok / len(tex)
         print(f"  seed={seed}: STE={lb:.3f} sim={sa:.3f}", flush=True)
 

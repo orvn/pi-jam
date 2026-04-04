@@ -70,9 +70,9 @@ python jamxe\build.py --train
 
 ## Included Binaries
 
-- [picojam/dist/picojam.xex](/C:/j/atari/jam-release/picojam/dist/picojam.xex)
-- [jam/dist/jam.xex](/C:/j/atari/jam-release/jam/dist/jam.xex)
-- [jamxe/dist/jamxe.xex](/C:/j/atari/jam-release/jamxe/dist/jamxe.xex)
+- [picojam/dist/picojam.xex](picojam/dist/picojam.xex)
+- [jam/dist/jam.xex](jam/dist/jam.xex)
+- [jamxe/dist/jamxe.xex](jamxe/dist/jamxe.xex)
 
 ## Project Notes
 

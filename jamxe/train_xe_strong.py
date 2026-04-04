@@ -121,7 +121,7 @@ def train(data_file, out_file='weights_xe_strong.bin'):
         ex = make_examples(ps, aug=10)
         X = torch.tensor([e[0] for e in ex], dtype=torch.float32, device=DV)
         Y = torch.tensor([e[1] for e in ex], dtype=torch.long, device=DV)
-        S = torch.tensor([e[2] for e in ex], dtype=torch.bool, device=DV)
+        S = torch.tensor([e[2] for e in ex], dtype=torch.long, device=DV)
         if seed == 0:
             print(f"Examples: {len(ex)}, starts: {S.sum().item()}", flush=True)
 
@@ -169,7 +169,7 @@ def train(data_file, out_file='weights_xe_strong.bin'):
         if ls: w1.data, b1.data, w2.data, b2.data, b2s.data, b2m.data = ls
 
         # Quantize
-        W1 = w1.data.round().clamp(-8, 7).cpu().numpy().astype(int)
+        W1 = w1.data.round().clamp(-2, 1).cpu().numpy().astype(int)
         B1 = b1.data.round().clamp(-128, 127).cpu().numpy().astype(int)
         W2 = w2.data.round().clamp(-8, 7).cpu().numpy().astype(int)
         B2 = b2.data.round().clamp(-128, 127).cpu().numpy().astype(int)
@@ -184,7 +184,11 @@ def train(data_file, out_file='weights_xe_strong.bin'):
             return [sum(int(W2[r,c]) * hid[c] for c in range(NH)) + int(bi[r]) for r in range(NO)]
 
         tex = make_examples(ps, aug=0)
-        ok = sum(1 for h, t, s in tex if sim1(h, s).index(max(sim1(h, s))) == t)
+        ok = 0
+        for h, t, s in tex:
+            lo = sim1(h, s)
+            if lo.index(max(lo)) == t:
+                ok += 1
         sa = ok / len(tex)
         print(f"  seed={seed}: STE={lb:.3f} sim={sa:.3f}", flush=True)
 
@@ -232,7 +236,7 @@ def train(data_file, out_file='weights_xe_strong.bin'):
     def gen(q):
         ctx = q + SEP; r = ''; pos = 0
         for _ in range(15):
-            lo = sim1(dual_hash(ctx), pos < 3)
+            lo = sim1(dual_hash(ctx), 0 if pos < 3 else (1 if pos < 8 else 2))
             i = lo.index(max(lo))
             if i == EOL: break
             r += CS[i]; ctx += CS[i].lower(); pos += 1

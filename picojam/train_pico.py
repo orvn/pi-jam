@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PICO JAM trainer: 96 -> 128 -> 45
+PICO JAM trainer: 96 -> 64 -> 45
 W1: 1-BIT (8 per byte!), W2: INT2 (4 per byte), single bias + algorithmic EOL.
 
 Weight layout:
@@ -177,7 +177,11 @@ def train(data_file, out_file='weights_pico.bin'):
             return lo
 
         tex = make_examples(ps, aug=0)
-        ok = sum(1 for h, t, p in tex if sim1(h, p).index(max(sim1(h, p))) == t)
+        ok = 0
+        for h, t, p in tex:
+            lo = sim1(h, p)
+            if lo.index(max(lo)) == t:
+                ok += 1
         sa = ok / len(tex)
         print(f"  seed={seed}: STE={lb:.3f} sim={sa:.3f}", flush=True)
 

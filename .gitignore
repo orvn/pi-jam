@@ -1,0 +1,16 @@
+# Build artifacts
+*.o
+jamxe/jamxe_link.xex
+jamxe/weights_xe_main.bin
+
+# Generated theme includes
+picojam/theme_pico.inc
+jam/theme.inc
+jamxe/theme_xe.inc
+
+# Python
+__pycache__/
+*.pyc
+
+# Local toolchains
+tools/

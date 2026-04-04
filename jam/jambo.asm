@@ -1,7 +1,7 @@
 ; JAMBO - Byte-level generative language model on Atari 800
 ; Generates text one character at a time. No lookup table.
 ; Architecture: 192 input features -> 256 hidden (ReLU) -> 45 output (char)
-; A. M. Thorn, 2026. twistj.com
+; Marek Spanel, 2026. jam.ag
 
 .export start
 CIOV    = $E456
