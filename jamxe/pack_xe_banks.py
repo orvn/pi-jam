@@ -43,6 +43,46 @@ def runad(addr: int) -> bytes:
     return struct.pack("<HHH", 0x02E0, 0x02E1, addr)
 
 
+def sio2sd_init_stub() -> bytes:
+    """INIT stub that prepares the machine for safe SIO2SD loading.
+
+    SIO2SD loads XEX segments in small chunks. ANTIC DMA reads from
+    memory being overwritten during loading, causing crashes. This stub:
+    1. Ensures PORTB is in safe main-RAM mode
+    2. Disables ANTIC DMA (STA $D400) to stop display reads
+    3. Sets RAMTOP to $D0 to move screen buffers out of the way
+    4. Closes and reopens E: so the OS reallocates screen memory high
+
+    Must run as the very first INIT before any large segments load.
+    """
+    code = bytes([
+        0xAD, 0x01, 0xD3,       # LDA $D301
+        0x09, 0xB3,             # ORA #$B3         ; safe RAM config
+        0x8D, 0x01, 0xD3,       # STA $D301
+        0xA9, 0x00,             # LDA #0
+        0x8D, 0x00, 0xD4,       # STA $D400        ; disable ANTIC DMA
+        0xA9, 0xD0,             # LDA #$D0
+        0x85, 0x6A,             # STA $6A          ; RAMTOP = $D000
+        0xA9, 0x0C,             # LDA #12          ; CLOSE command
+        0x8D, 0x42, 0x03,       # STA ICCOM
+        0x20, 0x56, 0xE4,       # JSR CIOV         ; close E:
+        0xA9, 0x03,             # LDA #3           ; OPEN command
+        0x8D, 0x42, 0x03,       # STA ICCOM
+        0xA9, 0x36,             # LDA #<edev       ; -> "E:",EOL at $0636
+        0x8D, 0x44, 0x03,       # STA ICBAL
+        0xA9, 0x06,             # LDA #>edev
+        0x8D, 0x45, 0x03,       # STA ICBAH
+        0xA9, 0x0C,             # LDA #$0C         ; read+write
+        0x8D, 0x4A, 0x03,       # STA ICAX1
+        0xA9, 0x00,             # LDA #0
+        0x8D, 0x4B, 0x03,       # STA ICAX2
+        0x20, 0x56, 0xE4,       # JSR CIOV         ; open E:
+        0x60,                   # RTS
+        0x45, 0x3A, 0x9B,       # "E:", EOL        ; at $0636
+    ])
+    return code
+
+
 def copy_stub(portb_bank: int) -> bytes:
     """Generate INIT stub that copies 16KB from main $4000-$7FFF to a bank.
 
@@ -157,6 +197,12 @@ def pack(weights_file: str, linker_file: str, map_file: str, output_file: str) -
     code_end = CODE_START + code_len - 1
 
     xex = bytearray(b"\xFF\xFF")
+
+    # SIO2SD fix: disable ANTIC DMA and move screen memory before loading
+    sio_stub = sio2sd_init_stub()
+    xex += seg(STUB_ADDR, sio_stub)
+    xex += initad(STUB_ADDR)
+
     for bank, portb in enumerate(PORTB_BANK):
         start = bank * BANK_SIZE
         bank_data = weights[start : start + BANK_SIZE]
