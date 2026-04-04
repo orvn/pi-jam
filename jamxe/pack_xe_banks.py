@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Package JAMXE as a bank-loaded 130XE XEX.
+"""Package JAMXE as a bank-loaded 130XE XEX (SIO2SD-safe).
 
-Sequence:
-- INIT stub selects bank 0, loader writes bank0 data to $4000-$7FFF
+Sequence (safe: PORTB stays in main-RAM mode during all SIO transfers):
+- load bank0 data to $4000-$7FFF in MAIN RAM
+- INIT stub copies $4000-$7FFF from main RAM to extended bank 0
 - repeat for bank 1..3
-- final INIT stub restores main RAM
 - append CODE and RODATA as proper XEX segments
 - append RUNAD -> $0D00
+
+The copy stub uses $0700-$07FF as a 256-byte page buffer and toggles
+PORTB only inside the stub (no bank switching during disk I/O).
 """
 from __future__ import annotations
 
@@ -24,6 +27,8 @@ CODE_MEM_SIZE = 0x1300       # filled region size from jamxe.cfg
 RODATA_START = 0x8000
 RODATA_MEM_SIZE = 0x4000     # filled region size from jamxe.cfg
 MAX_SAFE_CODE_END = CODE_START + CODE_MEM_SIZE - 1
+STUB_ADDR = 0x0600
+BUF_ADDR = 0x0700
 
 
 def seg(start: int, data: bytes) -> bytes:
@@ -38,13 +43,75 @@ def runad(addr: int) -> bytes:
     return struct.pack("<HHH", 0x02E0, 0x02E1, addr)
 
 
-def init_stub(portb_value: int) -> bytes:
+def copy_stub(portb_bank: int) -> bytes:
+    """Generate INIT stub that copies 16KB from main $4000-$7FFF to a bank.
+
+    Uses $0700-$07FF as a 256-byte page buffer. PORTB is only switched
+    inside the copy loop, never during SIO disk transfers.
+
+    Layout at $0600 (51 bytes):
+      $0600  LDX #$40           start page
+      $0602  STX $0611          patch src high byte
+      $0605  STX $0624          patch dst high byte
+      $0608  LDA #$B3           PORTB_MAIN
+      $060A  STA $D301
+      $060D  LDY #$00
+      $060F  LDA $4000,Y        (src, high byte patched)
+      $0612  STA $0700,Y        buffer
+      $0615  INY
+      $0616  BNE $060F
+      $0618  LDA #portb_bank
+      $061A  STA $D301
+      $061D  LDY #$00
+      $061F  LDA $0700,Y        buffer
+      $0622  STA $4000,Y        (dst, high byte patched)
+      $0625  INY
+      $0626  BNE $061F
+      $0628  INX
+      $0629  CPX #$80
+      $062B  BNE $0602
+      $062D  LDA #$B3
+      $062F  STA $D301
+      $0632  RTS
+    """
+    src_hi_addr = STUB_ADDR + 0x11   # high byte of LDA $4000,Y
+    dst_hi_addr = STUB_ADDR + 0x24   # high byte of STA $4000,Y
+
     code = bytes([
-        0xA9, portb_value,      # lda #imm
-        0x8D, 0x01, 0xD3,       # sta $D301
-        0x60,                   # rts
+        # -- page loop top ($0600) --
+        0xA2, 0x40,                         # LDX #$40         ; start at page $40
+        # -- @nextpage ($0602) --
+        0x8E, src_hi_addr & 0xFF, src_hi_addr >> 8,  # STX src+2
+        0x8E, dst_hi_addr & 0xFF, dst_hi_addr >> 8,  # STX dst+2
+        # Phase 1: read page from main RAM into buffer
+        0xA9, PORTB_MAIN,                   # LDA #$B3
+        0x8D, 0x01, 0xD3,                   # STA $D301
+        0xA0, 0x00,                         # LDY #$00
+        # @src ($060F):
+        0xB9, 0x00, 0x40,                   # LDA $4000,Y      (high byte patched)
+        0x99, 0x00, BUF_ADDR >> 8,          # STA $0700,Y
+        0xC8,                               # INY
+        0xD0, 0xF7,                         # BNE @src          (-9)
+        # Phase 2: write buffer to bank
+        0xA9, portb_bank,                   # LDA #bank_portb
+        0x8D, 0x01, 0xD3,                   # STA $D301
+        0xA0, 0x00,                         # LDY #$00
+        # @dst ($061F):
+        0xB9, 0x00, BUF_ADDR >> 8,          # LDA $0700,Y
+        0x99, 0x00, 0x40,                   # STA $4000,Y      (high byte patched)
+        0xC8,                               # INY
+        0xD0, 0xF7,                         # BNE @dst          (-9)
+        # Next page
+        0xE8,                               # INX
+        0xE0, 0x80,                         # CPX #$80          ; until page $80
+        0xD0, 0xD5,                         # BNE @nextpage     (-43 -> $0602)
+        # Restore main RAM
+        0xA9, PORTB_MAIN,                   # LDA #$B3
+        0x8D, 0x01, 0xD3,                   # STA $D301
+        0x60,                               # RTS
     ])
-    return seg(0x0600, code) + initad(0x0600)
+    assert len(code) == 51, f"copy stub is {len(code)} bytes, expected 51"
+    return code
 
 
 def parse_segments(map_file: str) -> tuple[int, int, int]:
@@ -95,10 +162,11 @@ def pack(weights_file: str, linker_file: str, map_file: str, output_file: str) -
         bank_data = weights[start : start + BANK_SIZE]
         if len(bank_data) != BANK_SIZE:
             raise SystemExit(f"bank {bank} size mismatch: {len(bank_data)} B")
-        xex += init_stub(portb)
+        # SIO2SD-safe: load bank data to MAIN RAM, then INIT copies to bank
         xex += seg(0x4000, bank_data)
+        xex += seg(STUB_ADDR, copy_stub(portb))
+        xex += initad(STUB_ADDR)
 
-    xex += init_stub(PORTB_MAIN)
     xex += seg(CODE_START, code)
     xex += seg(RODATA_START, rodata)
     xex += runad(CODE_START)
