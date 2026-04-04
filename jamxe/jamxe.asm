@@ -96,7 +96,7 @@ vbi_flag: .res 1
 old_vbi: .res 2
 last_bucket: .res 1
 first_turn: .res 1
-last_bag: .res 1
+last_bag: .res 1        ; current answer still numeric/space-only
 inv_len: .res 1    ; ps_inv length must survive pc/CIOV
 snd_ctr: .res 1
 hint_mode: .res 1
@@ -320,6 +320,8 @@ got_input:
         sta repchr       ; repeat counter
         lda #$FF
         sta lastch       ; no previous char
+        lda #1
+        sta last_bag     ; empty answer may still become numeric
         lda #' '
         sta co
         jsr pc          ; leading space before answer
@@ -397,7 +399,7 @@ gen_loop:
         jsr l2_argmax_sparse
 
         ; === Confidence check: first char only ===
-        ; margin < 3 -> JUST ASK (prevents garbage start)
+        ; margin < 2 -> JUST ASK (prevents garbage start)
         ; No mid-gen check (was cutting valid answers on real HW)
         ; MAX_GEN is intentionally a bit looser on XE; repeat detection and
         ; EOL shaping still keep runaway text in check.
@@ -411,7 +413,7 @@ gen_loop:
         sbc shi
         bne @conf_ok        ; high byte != 0 = large margin
         lda tmp
-        cmp #3              ; first char threshold (lowered: trained min=2)
+        cmp #2              ; first char threshold (trained min=2)
         bcs @conf_ok
         lda nmien_save
         sta NMIEN
@@ -426,6 +428,10 @@ gen_loop:
         lda gencnt
         cmp #20
         bcs @eol_ok       ; late enough, accept EOL
+        beq @eol_margin
+        lda last_bag
+        bne @eol_ok       ; numeric answers can end cleanly even with low margin
+@eol_margin:
         ; Compare margin: blo:bhi - slo:shi
         sec
         lda blo
@@ -465,6 +471,9 @@ gen_loop:
         lda repchr
         cmp #3           ; 3 same chars in a row = garbage
         bcc @printch_ok
+        jsr answer_repeat_ok
+        bcs @printch_ok   ; allow numeric answers like 111 or 1000
+@repeat_bad:
         jmp gen_fallback
 @printch_ok:
         jmp @printch
@@ -472,6 +481,7 @@ gen_loop:
         lda #1
         sta repchr
 @printch:
+        jsr update_answer_numeric_flag
         jsr stop_sound
         lda dream_flag
         beq @print_normal
@@ -690,6 +700,8 @@ not_dreaming:
         sta repchr
         lda #$FF
         sta lastch
+        lda #1
+        sta last_bag
         lda #' '
         sta co
         jsr pc
@@ -1979,6 +1991,41 @@ stop_sound:
 ; them in a single sweep across all 4 banks.
 ; =====================================================
 .segment "HICODE"
+
+; Carry set when repeated current char is still valid for a numeric answer.
+answer_repeat_ok:
+        lda last_bag
+        beq @aro_no
+        lda co
+        cmp #' '
+        beq @aro_yes
+        cmp #'0'
+        bcc @aro_no
+        cmp #'9'+1
+        bcc @aro_yes
+@aro_no:
+        clc
+        rts
+@aro_yes:
+        sec
+        rts
+
+; Keep last_bag true only while answer stays digit/space-only.
+update_answer_numeric_flag:
+        lda last_bag
+        beq @uan_done
+        lda co
+        cmp #' '
+        beq @uan_done
+        cmp #'0'
+        bcc @uan_clear
+        cmp #'9'+1
+        bcc @uan_done
+@uan_clear:
+        lda #0
+        sta last_bag
+@uan_done:
+        rts
 
 ; --- Dirty table helpers ---
 ; Input: tmp = byte offset in W1 row (0-127), nibble_sel = nibble position (0-3)

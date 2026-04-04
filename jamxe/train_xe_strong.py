@@ -12,12 +12,25 @@ Same 77,703-byte external blob size as the archived stable baseline, but with
 the richer 512-input XE feature layout.
 """
 import torch, torch.nn as nn, torch.nn.functional as F, random, sys, os
+from collections import defaultdict
 
 CS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-,!?'/"
 EOL = len(CS); NO = EOL + 1; SEP = '>'
 NT = 192; NB = 64; NI = 512; NH = 512
 DV = 'cuda' if torch.cuda.is_available() else 'cpu'
 CI = {c: i for i, c in enumerate(CS)}
+MAX_INPUT = 16
+HEAD_INPUT = 10
+TAIL_INPUT = 6
+
+
+def normalize_query(q: str) -> str:
+    q = q.strip().lower()
+    while q and q[-1] in "?!.":
+        q = q[:-1]
+    if len(q) > MAX_INPUT:
+        q = q[:HEAD_INPUT] + q[-TAIL_INPUT:]
+    return q
 
 def dual_hash(t):
     h = [0] * NI; t2 = t.lower()
@@ -72,13 +85,28 @@ def dual_hash(t):
 
 def load_pairs(path):
     ps = []
+    seen = set()
+    norm_answers = defaultdict(set)
     with open(path) as f:
         for l in f:
             l = l.strip()
             if not l or l.startswith('#') or l.startswith('@') or '|' not in l:
                 continue
             q, a = l.split('|', 1)
-            ps.append((q.strip().lower(), a.strip().upper()))
+            qn = normalize_query(q)
+            an = a.strip().upper()
+            if not qn or not an:
+                continue
+            norm_answers[qn].add(an)
+            if (qn, an) not in seen:
+                ps.append((qn, an))
+                seen.add((qn, an))
+
+    conflicts = {q: sorted(ans) for q, ans in norm_answers.items() if len(ans) > 1}
+    if conflicts:
+        print("WARNING: normalized query collisions detected:", flush=True)
+        for q in sorted(conflicts):
+            print(f"  {q!r} -> {', '.join(conflicts[q])}", flush=True)
     return ps
 
 def make_examples(ps, aug=0):
