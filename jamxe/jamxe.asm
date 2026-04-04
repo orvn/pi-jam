@@ -2416,7 +2416,7 @@ relu_build_hid_sparse:
 @rb_done:
         rts
 
-.segment "CODE"
+.segment "HICODE"
 
 ; =====================================================
 ; VBI cursor blinker (deferred VBI)

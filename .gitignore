@@ -1,6 +1,10 @@
 # Build artifacts
 *.o
-jamxe/jamxe_link.xex
+*.map
+*.dbg
+*.lst
+*.lbl
+*_link.xex
 jamxe/weights_xe_main.bin
 
 # Generated theme includes

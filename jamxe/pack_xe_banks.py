@@ -13,14 +13,15 @@ from __future__ import annotations
 import struct
 import sys
 from pathlib import Path
+import re
 
 BANK_SIZE = 16384
 W1_SIZE = BANK_SIZE * 4
 PORTB_BANK = [0xA3, 0xA7, 0xAB, 0xAF]
 PORTB_MAIN = 0xB3
 CODE_START = 0x0D00
-CODE_SIZE = 0x1300
 RODATA_START = 0x8000
+MAX_SAFE_CODE_END = 0x1BFF
 
 
 def seg(start: int, data: bytes) -> bytes:
@@ -44,21 +45,45 @@ def init_stub(portb_value: int) -> bytes:
     return seg(0x0600, code) + initad(0x0600)
 
 
-def pack(weights_file: str, linker_file: str, output_file: str) -> None:
+def parse_segments(map_file: str) -> tuple[int, int, int]:
+    text = Path(map_file).read_text(encoding="utf-8", errors="replace")
+    sizes: dict[str, int] = {"CODE": 0, "HICODE": 0, "RODATA": 0}
+    in_segment_list = False
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line == "Segment list:":
+            in_segment_list = True
+            continue
+        if not in_segment_list:
+            continue
+        m = re.match(r"^(CODE|HICODE|RODATA)\s+[0-9A-F]{6}\s+[0-9A-F]{6}\s+([0-9A-F]{6})\s+[0-9A-F]{5}$", line)
+        if m:
+            sizes[m.group(1)] = int(m.group(2), 16)
+    if sizes["CODE"] <= 0:
+        raise SystemExit(f"failed to parse CODE size from map: {map_file}")
+    return sizes["CODE"], sizes["HICODE"], sizes["RODATA"]
+
+
+def pack(weights_file: str, linker_file: str, map_file: str, output_file: str) -> None:
     weights = Path(weights_file).read_bytes()
     linker = Path(linker_file).read_bytes()
+    code_len, hicode_len, rodata_len = parse_segments(map_file)
 
     if len(weights) < W1_SIZE:
         raise SystemExit(f"weights too small: {len(weights)} B")
-    if len(linker) < CODE_SIZE:
-        raise SystemExit(f"linker too small: {len(linker)} B")
+    if len(linker) < code_len + hicode_len + rodata_len:
+        raise SystemExit(
+            f"linker too small: {len(linker)} B < {code_len + hicode_len + rodata_len} B"
+        )
 
-    code = bytearray(linker[:CODE_SIZE])
-    rodata = bytearray(linker[CODE_SIZE:])
-    while code and code[-1] == 0:
-        code.pop()
-    while rodata and rodata[-1] == 0:
-        rodata.pop()
+    code = linker[:code_len]
+    rodata = linker[code_len : code_len + hicode_len + rodata_len]
+
+    code_end = CODE_START + code_len - 1
+    if code_end > MAX_SAFE_CODE_END:
+        raise SystemExit(
+            f"low CODE ends at ${code_end:04X}, above conservative safe limit ${MAX_SAFE_CODE_END:04X}"
+        )
 
     xex = bytearray(b"\xFF\xFF")
     for bank, portb in enumerate(PORTB_BANK):
@@ -76,10 +101,14 @@ def pack(weights_file: str, linker_file: str, output_file: str) -> None:
 
     Path(output_file).write_bytes(xex)
     print(f"Packed {output_file}: {len(xex)} B")
+    print(f"  CODE   ${CODE_START:04X}-${code_end:04X} ({code_len} B)")
+    if rodata:
+        ro_end = RODATA_START + len(rodata) - 1
+        print(f"  HIGH   ${RODATA_START:04X}-${ro_end:04X} ({len(rodata)} B)")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python pack_xe_banks.py <weights_xe.bin> <jamxe_link.xex> <out.xex>")
+    if len(sys.argv) != 5:
+        print("Usage: python pack_xe_banks.py <weights_xe.bin> <jamxe_link.xex> <mapfile> <out.xex>")
         raise SystemExit(1)
-    pack(sys.argv[1], sys.argv[2], sys.argv[3])
+    pack(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
