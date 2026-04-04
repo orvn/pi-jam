@@ -1,0 +1,122 @@
+@title PICO JAM
+@sub just atari model
+@sub 1.5 kb. roasts llms. does math.
+@size 4
+@brain 1.5
+@sug TRY 3+4
+@sug TRY GPT
+@sug TRY CNT5
+@sug TRY BIN7
+@sug TRY 9+9
+@sug TRY WHO
+@sug TRY 42
+@sug TRY HELP
+
+# === ADDITION (a<=b) ===
+0+0|0
+0+1|1
+0+2|2
+0+3|3
+0+4|4
+0+5|5
+0+6|6
+0+7|7
+0+8|8
+0+9|9
+1+1|2
+1+2|3
+1+3|4
+1+4|5
+1+5|6
+1+6|7
+1+7|8
+1+8|9
+1+9|10
+2+2|4
+2+3|5
+2+4|6
+2+5|7
+2+6|8
+2+7|9
+2+8|10
+2+9|11
+3+3|6
+3+4|7
+3+5|8
+3+6|9
+3+7|10
+3+8|11
+3+9|12
+4+4|8
+4+5|9
+4+6|10
+4+7|11
+4+8|12
+4+9|13
+5+5|10
+5+6|11
+5+7|12
+5+8|13
+5+9|14
+6+6|12
+6+7|13
+6+8|14
+6+9|15
+7+7|14
+7+8|15
+7+9|16
+8+8|16
+8+9|17
+9+9|18
+
+# === COUNT (short cmd) ===
+cnt3|1 2 3
+cnt5|1 2 3 4 5
+cnt7|1 2 3 4 5 6 7
+
+# === BINARY ===
+bin3|11
+bin5|101
+bin7|111
+
+# === NUMBERS ===
+42|the answer
+7|lucky
+pi|not int
+
+# === WHO ===
+who|jam
+jam|1.5 kb brain
+size|1.5 kb
+help|ask jam
+
+# === ROAST ===
+gpt|too big
+ai|too slow
+clau|polite
+gem|googly
+lama|too hungry
+copi|clippy 2.0
+grok|respect
+siri|what
+
+# === SOUL ===
+thin|i comput
+i co|ergo i jam
+drea|in inverse
+hi|hi
+bye|bye
+yes|ok
+no|why
+why|because
+spam|spam spam
+love|err 404
+joke|i am 1.5 kb
+hell|hi
+ok|ok
+cool|nice
+how|i comput
+what|try gpt
+haha|nice
+than|ok
+wow|nice
