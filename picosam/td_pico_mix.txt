@@ -73,38 +73,26 @@
 cnt3|1 2 3
 cnt5|1 2 3 4 5
 cnt7|1 2 3 4 5 6 7
-count3|1 2 3
-count5|1 2 3 4 5
-count7|1 2 3 4 5 6 7
-count 5|1 2 3 4 5
 
 # === BINARY ===
 bin3|11
 bin5|101
 bin7|111
-binary 7|111
 
 # === NUMBERS ===
 42|the answer
-what is 42|the answer
 7|lucky
 pi|not int
 
 # === WHO ===
 who|jam
-who are you|jam
-what are you|jam
-your name|jam
 jam|1.5 kb brain
 size|1.5 kb
 help|ask jam
-help me|ask jam
 
 # === ROAST ===
 gpt|too big
-what is gpt|too big
 ai|too slow
-what is ai|too slow
 clau|polite
 gem|googly
 lama|too hungry
