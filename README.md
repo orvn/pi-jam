@@ -1,10 +1,23 @@
-# Pi Jam
+# Pi JAM
 
-A generative language model for inference on Rasberry Pi Zero.
+Generative language models for inference on Raspberry Pi Zero.
 
 Lineage and naming of this repo comes from [Atari JAM](https://github.com/marspa73/atarijam), originally designed to run on Atari 800.
 
-_Work in progress, more to come_
+_Just Another Model(s)_ for the smallest Rasberry Pi!
+
+---
+
+## Models
+
+| Variant | Type | Weights | Description |
+|---------|------|---------|-------------|
+| `jamxe` | 2-layer MLP | 76 KB | 512→512→45, dual-source feature hash with frozen query anchor |
+| `jamkid` | 2-layer MLP | 76 KB | Same engine as jamxe, trained on a kid-register dataset |
+| `neuralpi` (WIP) | Decoder transformer | ~25 MB | 8-layer attention model, KV cache inference |
+
+`jamxe` and `jamkid` respond in milliseconds. 
+`neuralpi` _(work in progress)_ will be slower but architecturally more capable
 
 ---
 
@@ -16,10 +29,7 @@ Requires `gcc` and `make`. No other dependencies for inference.
 make
 ```
 
-This builds all four variants into their respective `dist/` directories.
-
-To cross-compile for Pi Zero (ARM1176):
-
+To cross-compile for Pi Zero (ARM1176)
 ```sh
 CC=arm-linux-gnueabihf-gcc make
 ```
@@ -27,19 +37,19 @@ CC=arm-linux-gnueabihf-gcc make
 To build a single variant:
 
 ```sh
-make -C jamxe        # extended MLP    (~76 KB weights)
-make -C jamkid       # kid register    (~76 KB weights, same engine as jamxe)
-make -C transformer  # full transformer
+make -C jamxe    # extended MLP     (~76 KB weights)
+make -C jamkid   # kid register     (~76 KB weights, same engine as jamxe)
+make -C neuralpi # decoder transformer
 ```
 
 ## Run
 
-Each variant is a REPL. Type a query, get a response.
+Each variant is a REPL: type a query, get a response
 
 ```sh
 ./jamxe/dist/jamxe jamxe/weights_xe.bin
 ./jamkid/dist/jamkid jamkid/weights_jamkid.bin
-./transformer/dist/transformer transformer/weights_transformer.bin
+./neuralpi/dist/neuralpi neuralpi/weights_neuralpi.bin
 ```
 
 When running on the Pi, the binary and weights file can sit in the same directory and the weights path can be omitted:
@@ -54,11 +64,11 @@ cd jamxe && ./dist/jamxe
 |---------|-----|
 | jamxe | `HOW ARE YOU`, `WHAT IS LOVE`, `3+4`, `COUNT 5` |
 | jamkid | `HELLO`, `NAME`, `ORCA`, `STORY` |
-| transformer | open-ended queries, longer responses |
+| neuralpi | `HOW ARE YOU`, `WHAT IS ATARI`, `TELL A STORY` |
 
 ## Retrain
 
-Training requires Python 3 and PyTorch (offline, not needed on the Pi).
+Training requires Python 3 and PyTorch (offline and independent from the Pi).
 
 ```sh
 # MLP (jamxe / jamkid)
@@ -66,7 +76,7 @@ cd jamxe
 python3 train_xe_strong.py td_xe.txt weights_xe.bin
 make
 
-# Transformer
-python3 train_transformer.py td_xe.txt weights_transformer.bin
-make -C transformer
+# NeuralPi (transformer)
+python3 train_transformer.py td_xe.txt neuralpi/weights_neuralpi.bin
+make -C neuralpi
 ```

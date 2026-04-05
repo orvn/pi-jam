@@ -1,0 +1,17 @@
+@title TRANSFORMER
+@sub Decoder-only character model
+@sub Pi Zero W
+@sug HOW ARE YOU
+@sug WHAT IS LOVE
+@sug TELL A STORY
+@sug WHAT IS ATARI
+@sug COUNT 5
+@sug WHO ARE YOU
+@dream HOW ARE YOU
+@dream WHAT IS LOVE
+@dream TELL A STORY
+@dream WHAT IS ATARI
+@dream COUNT 5
+@dream WHO ARE YOU
+@dream WHY AM I HERE
+@dream WHAT IS TIME

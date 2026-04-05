@@ -1,4 +1,4 @@
-VARIANTS = jamxe jamkid transformer
+VARIANTS = jamxe jamkid neuralpi
 
 all: $(VARIANTS)
 
