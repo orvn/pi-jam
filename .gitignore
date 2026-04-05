@@ -1,16 +1,11 @@
 # Build artifacts
 *.o
-*.map
-*.dbg
-*.lst
-*.lbl
-*_link.xex
-jamxe/weights_xe_main.bin
 
-# Generated theme includes
-picojam/theme_pico.inc
-jam/theme.inc
-jamxe/theme_xe.inc
+# Generated headers
+theme.h
+
+# Build outputs
+dist/
 
 # Python
 __pycache__/
