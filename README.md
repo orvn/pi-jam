@@ -1,28 +1,31 @@
 
 # JAM (Just Atari Model) Release
 
-🕹️ Is this the smallest language model in the world? 
+Is this the smallest language model in the world?
 Who knows but it is a fully generative, deterministic language model, powered by a neural network.
 Real silicon intelligence in 2-80 kilobytes, running on a 1979 Atari 800.
 
 
-Three Atari language models, ready to build and ready to run:
+Four Atari language models, ready to build and ready to run:
 
 - `picojam`: ultra-tiny 8-bit proof, about `1.6 KB` brain
 - `jam`: compact standalone JAM, about `18 KB` brain
-- `jamxe`: bank-switched Atari 130XE model, about `77.7 KB` brain
+- `jamxe`: bank-switched Atari 130XE model, about `76 KB` brain
+- `jamkid`: same 130XE runtime, kid personality
 
  <img width="2131" height="1538" alt="image" src="https://github.com/user-attachments/assets/db6cf9ef-51df-492a-aa3c-05ea9e4658b1" />
 
 
 Each project folder contains:
 
-- source `.asm`
+- source `.asm` (or shared from `jamxe/`)
 - current training data
 - current trained weight blob
 - a prebuilt `.xex` in `dist/`
 - a portable `build.py`
 - a trainer script for optional retraining
+
+`jamxe` and `jamkid` also include `.atr` disk images for SIO2SD.
 
 <img width="1267" height="1206" alt="image" src="https://github.com/user-attachments/assets/62e499a8-106a-4361-97d5-029cb16daa9d" />
 
@@ -47,7 +50,7 @@ The build scripts try `ca65/ld65` from:
 
 ## Quick Start
 
-Build all three from the shipped weights:
+Build all four from the shipped weights:
 
 ```powershell
 python build_all.py
@@ -59,6 +62,7 @@ Build a single model:
 python picojam\build.py
 python jam\build.py
 python jamxe\build.py
+python jamkid\build.py
 ```
 
 Retrain and rebuild:
@@ -67,6 +71,7 @@ Retrain and rebuild:
 python picojam\build.py --train
 python jam\build.py --train
 python jamxe\build.py --train
+python jamkid\build.py --train
 ```
 
 ## Included Binaries
@@ -74,12 +79,24 @@ python jamxe\build.py --train
 - [picojam/dist/picojam.xex](picojam/dist/picojam.xex)
 - [jam/dist/jam.xex](jam/dist/jam.xex)
 - [jamxe/dist/jamxe.xex](jamxe/dist/jamxe.xex)
+- [jamxe/dist/jamxe.atr](jamxe/dist/jamxe.atr) (SIO2SD)
+- [jamkid/dist/jamkid.xex](jamkid/dist/jamkid.xex)
+- [jamkid/dist/jamkid.atr](jamkid/dist/jamkid.atr) (SIO2SD)
+
+## SIO2SD Notes
+
+The `.atr` images boot directly from the SD card. Setup:
+
+1. Copy `.atr` to SD card
+2. Assign to **D1:** slot
+3. **Disable SIO2SD** (important!)
+4. Power on / reset the Atari — it boots from the ATR
 
 ## Project Notes
 
 ### `picojam`
 
-Smallest of the three. Fast, weird, and fun.
+Smallest of the four. Fast, weird, and fun.
 
 ### `jam`
 
@@ -87,11 +104,17 @@ Compact general JAM release. Strong personality, simple standalone build, no ban
 
 ### `jamxe`
 
-Main high-end Atari XE line. Uses bank-switched memory and the richest runtime.
+Main high-end Atari XE line. Uses bank-switched 130XE memory,
+512-input frozen query anchor, D/J context attention, incremental
+L1 with bank-major delta normalization.
 
+### `jamkid`
+
+Same 130XE runtime as `jamxe`, different personality.
+A small, curious, playful machine child. Shares ASM and packer with `jamxe/`.
 
 
 Copyright (c) 2026 jam.ag / Marek Spanel
 
-**LICENSE MIT:** Do whatever you want, just keep my name and don’t blame me.
+**LICENSE MIT:** Do whatever you want, just keep my name and don't blame me.
 

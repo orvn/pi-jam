@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PROJECTS = ("picojam", "jam", "jamxe")
+PROJECTS = ("picojam", "jam", "jamxe", "jamkid")
 
 
 def run(args: list[str], cwd: Path) -> None:
