@@ -53,6 +53,11 @@ tell me more|TELL ME MORE
 look|LOOK LOOK
 listen|I AM LISTENING
 can we talk|YES TALK
+we can talk|YES TALK
+lets talk|YES TALK
+talk with me|YES TALK
+talk now|YES TALK
+please talk|YES TALK
 can i ask|ASK ME WHY
 yes|YAY YES
 no|NOPEY NO
@@ -1070,11 +1075,11 @@ elephant|BIG NOSE FRIEND
 monkey|TREE JOKER
 owl|NIGHT LOOKER
 whale|BIG OCEAN SONG
-dolphin|SMILE SWIM FRIEND
+dolphin|SMART DOLPHIN
 
 # === OPPOSITES COMPARE VERBS ===
 opposite|TURN AROUND IDEA
-opposites|BIG SMALL HOT COLD
+opposites|BIG SMALL
 compare|LOOK SIDE SIDE
 comparison|LOOK SIDE SIDE
 different|NOT THE SAME
@@ -1270,19 +1275,21 @@ transient orca|MAMMAL HUNT ORCA
 biggs orca|MAMMAL HUNT ORCA
 offshore orca|SHARK EATING ORCA
 
-dolphins|SMART SWIM FRIENDS
-bottlenose dolphin|SMILING GREY DOLPHIN
-common dolphin|FAST HAPPY DOLPHIN
-spinner dolphin|SPIN JUMP DOLPHIN
-dusky dolphin|DARK JUMP DOLPHIN
+dolphins|SMART DOLPHINS
+what is dolphin|SMART DOLPHIN
+bottlenose dolphin|GREY SMART DOLPHIN
+common dolphin|FAST SMART DOLPHIN
+spinner dolphin|SPIN SMART DOLPHIN
+dusky dolphin|DARK SMART DOLPHIN
 river dolphin|LONG NOSE DOLPHIN
 pink dolphin|PINK RIVER DOLPHIN
 porpoise|SMALL SHY DOLPHIN
 porpoises|SMALL SHY DOLPHINS
 
 whales|BIG OCEAN SINGERS
-blue whale|BIGGEST ANIMAL WOW
-humpback whale|SINGING BIG WHALE
+blue whale|BIG BLUE WHALE
+what is blue whale|BIG BLUE WHALE
+humpback whale|SINGING WHALE
 fin whale|FAST BIG WHALE
 gray whale|TRAVELING BIG WHALE
 sperm whale|BIG HEAD WHALE
@@ -1298,12 +1305,13 @@ whale tail|WIDE TAIL FLUKE
 fluke|WHALE TAIL FIN
 blowhole|HEAD AIR HOLE
 
-shark|SHARP TOOTH SWIMMER
-sharks|MANY SHARP SWIMMERS
-great white shark|BIG SHARP WHITE
+shark|TOOTHY SHARK
+what is shark|TOOTHY SHARK
+sharks|TOOTHY SHARKS
+great white shark|BIG WHITE SHARK
 tiger shark|STRIPE SHADOW SHARK
 hammerhead shark|HAMMER FACE SHARK
-whale shark|SPOTTY GIANT SHARK
+whale shark|GIANT SPOT SHARK
 mako shark|FAST FAST SHARK
 reef shark|REEF SWIM SHARK
 bull shark|RIVER TO SEA SHARK
@@ -1318,7 +1326,7 @@ shark egg|MERMAID PURSE EGG
 
 ray|FLAT GLIDE FISH
 rays|FLAT GLIDE FISHES
-manta ray|WING SWIM GIANT
+manta ray|GIANT GLIDE RAY
 stingray|FLAT TAIL STINGER
 eagle ray|SPOT WING RAY
 sawfish|LONG SAW NOSE
@@ -1344,8 +1352,9 @@ sea star|FIVE ARM STAR
 starfish|SEA STAR FRIEND
 sea urchin|SPIKE BALL SEA
 sea cucumber|SOFT SEA TUBE
-octopus|EIGHT ARM GENIUS
-octopus arms|EIGHT CURLY ARMS
+octopus|EIGHT ARMS
+what is octopus|EIGHT ARMS
+octopus arms|EIGHT ARMS
 octopus ink|PUFF BLACK CLOUD
 giant pacific octopus|HUGE RED OCTOPUS
 squid|TEN ARM ZOOMER
@@ -1619,22 +1628,36 @@ click whistle pop|ORCA TALK MUSIC
 fish seal squid|ORCA DINNER LIST
 orcas hunt together|TEAMWORK IN SEA
 smart swim friends|LEAP SPLASH PLAY
+smart dolphin|LEAP SPLASH PLAY
+smart dolphins|LEAP SPLASH PLAY
+grey smart dolphin|CLICK CLICK FRIEND
+fast smart dolphin|FAST SEA FRIEND
+spin smart dolphin|SPIN AGAIN WOW
+dark smart dolphin|JUMP IN SHADOW
 smiling grey dolphin|CLICK CLICK FRIEND
 spin jump dolphin|SPIN AGAIN WOW
 pink river dolphin|RIVER MAGIC PINK
 sea unicorn whale|LONG TWIST TOOTH
 white smile whale|COLD WATER FRIEND
+big blue whale|BIGGEST ANIMAL
 biggest animal wow|BLUE WHALE WOW
 singing big whale|SONG IN OCEAN
+singing whale|SONG IN OCEAN
+toothy shark|SHARK SWIMS BY
+toothy sharks|KEEP HANDS IN BOAT
+big white shark|SHARP TEETH WOW
 sharp tooth swimmer|SHARK SWIMS BY
 many sharp swimmers|KEEP HANDS IN BOAT
+giant spot shark|GENTLE GIANT WOW
 spotty giant shark|GENTLE GIANT WOW
 hammer face shark|FUNNY WIDE HEAD
+giant glide ray|MANTA GLIDES
 wing swim giant|MANTA GLIDES
 flat tail stinger|GLIDE DO NOT STEP
 horse shape fish|TINY FLOAT HORSE
 dad carries babies|SEAHORSE DAD WOW
 eight arm genius|OPEN MANY JARS
+eight arms|OPEN MANY JARS
 giant eye squid|DEEP DARK GIANT
 color changing cuttle|COLOR MAGIC SEA
 gentle sea cow|MUNCH SEA GRASS
@@ -1646,6 +1669,7 @@ deep blue world|MANY SWIM FRIENDS
 dark cold down|LITTLE LIGHTS BELOW
 very deep dark|MYSTERY WATER WORLD
 opposite size|BIG SMALL AGAIN
+big small now|HOT COLD NEXT
 opposite feel|HOT COLD AGAIN
 opposite sound|LOUD QUIET AGAIN
 look side side|SAME OR DIFFERENT
