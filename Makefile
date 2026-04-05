@@ -1,4 +1,4 @@
-VARIANTS = picojam jam jamxe jamkid
+VARIANTS = jamxe jamkid transformer
 
 all: $(VARIANTS)
 

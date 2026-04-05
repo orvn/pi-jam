@@ -27,10 +27,9 @@ CC=arm-linux-gnueabihf-gcc make
 To build a single variant:
 
 ```sh
-make -C jam       # compact model  (~18 KB weights)
-make -C picojam   # ultra-tiny     (~1.6 KB weights)
-make -C jamxe     # extended       (~76 KB weights)
-make -C jamkid    # kid register   (~76 KB weights, same engine as jamxe)
+make -C jamxe        # extended MLP    (~76 KB weights)
+make -C jamkid       # kid register    (~76 KB weights, same engine as jamxe)
+make -C transformer  # full transformer
 ```
 
 ## Run
@@ -38,37 +37,36 @@ make -C jamkid    # kid register   (~76 KB weights, same engine as jamxe)
 Each variant is a REPL. Type a query, get a response.
 
 ```sh
-./jam/dist/jam jam/weights_b2s.bin
-./picojam/dist/picojam picojam/weights_pico.bin
 ./jamxe/dist/jamxe jamxe/weights_xe.bin
 ./jamkid/dist/jamkid jamkid/weights_jamkid.bin
+./transformer/dist/transformer transformer/weights_transformer.bin
 ```
 
 When running on the Pi, the binary and weights file can sit in the same directory and the weights path can be omitted:
 
 ```sh
-cd jam && ./dist/jam
+cd jamxe && ./dist/jamxe
 ```
 
 ## Try
 
-Queries that tend to work well per variant:
-
 | Variant | Try |
 |---------|-----|
-| jam | `2+3`, `COUNT 5`, `BIN 7`, `REV DOG` |
-| picojam | `3+4`, `CNT5`, `BIN7`, `GPT` |
 | jamxe | `HOW ARE YOU`, `WHAT IS LOVE`, `3+4`, `COUNT 5` |
 | jamkid | `HELLO`, `NAME`, `ORCA`, `STORY` |
+| transformer | open-ended queries, longer responses |
 
 ## Retrain
 
 Training requires Python 3 and PyTorch (offline, not needed on the Pi).
 
 ```sh
-cd jam
-python3 train_compact_2bit.py td_compact.txt weights_b2s.bin
+# MLP (jamxe / jamkid)
+cd jamxe
+python3 train_xe_strong.py td_xe.txt weights_xe.bin
 make
-```
 
-Same pattern for the other variants (`train_xe_strong.py` for jamxe/jamkid, `train_pico.py` for picojam).
+# Transformer
+python3 train_transformer.py td_xe.txt weights_transformer.bin
+make -C transformer
+```
