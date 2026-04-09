@@ -1,9 +1,6 @@
 # Pi JAM
 
 Generative language models for inference on Raspberry Pi Zero.
-
-Lineage and naming of this repo comes from [Atari JAM](https://github.com/marspa73/atarijam), originally designed to run on Atari 800.
-
 _Just Another Model(s)_ for the smallest Rasberry Pi!
 
 ---
@@ -12,9 +9,9 @@ _Just Another Model(s)_ for the smallest Rasberry Pi!
 
 | Variant | Type | Weights | Description |
 |---------|------|---------|-------------|
+| `neuralpi` (WIP) | Decoder transformer | ~25 MB | 8-layer attention model, KV cache inference |
 | `jamxe` | 2-layer MLP | 76 KB | 512→512→45, dual-source feature hash with frozen query anchor |
 | `jamkid` | 2-layer MLP | 76 KB | Same engine as jamxe, trained on a kid-register dataset |
-| `neuralpi` (WIP) | Decoder transformer | ~25 MB | 8-layer attention model, KV cache inference |
 
 `jamxe` and `jamkid` respond in milliseconds. 
 `neuralpi` _(work in progress)_ will be slower but architecturally more capable
@@ -37,9 +34,9 @@ CC=arm-linux-gnueabihf-gcc make
 To build a single variant:
 
 ```sh
+make -C neuralpi # decoder transformer
 make -C jamxe    # extended MLP     (~76 KB weights)
 make -C jamkid   # kid register     (~76 KB weights, same engine as jamxe)
-make -C neuralpi # decoder transformer
 ```
 
 ## Run
@@ -77,6 +74,11 @@ python3 train_xe_strong.py td_xe.txt weights_xe.bin
 make
 
 # NeuralPi (transformer)
-python3 train_transformer.py td_xe.txt neuralpi/weights_neuralpi.bin
+python3 train_transformer.py neuralpi/td_transformer.txt neuralpi/weights_neuralpi.bin
 make -C neuralpi
+# For large datasets (>10K pairs), augmentation auto-scales; override with --aug N if needed
 ```
+
+## Lineage
+
+Lineage and naming of this repo comes from [Atari JAM](https://github.com/marspa73/atarijam) (_Just Another Model_), originally designed to run on an even tinier Atari 800.

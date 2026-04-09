@@ -1,4 +1,4 @@
-CC      = gcc
+CC      ?= gcc
 CFLAGS  = -O2 -Wall
 TARGET  = dist/neuralpi
 DATA    = td_transformer.txt

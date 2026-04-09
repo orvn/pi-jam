@@ -387,7 +387,7 @@ static void forward_token(Model *m, int tok, int pos,
 #define WEIGHTS_FILE "weights_neuralpi.bin"
 #endif
 
-#define MAX_NEW 20
+#define MAX_NEW 32
 
 static void generate(Model *m, const char *prompt, char *out)
 {

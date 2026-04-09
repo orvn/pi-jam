@@ -73,14 +73,16 @@ class Config:
     d_model:    int   = 512
     n_heads:    int   = 8
     d_ff:       int   = 2048
-    ctx_len:    int   = 64
+    ctx_len:    int   = 96
     dropout:    float = 0.1
     lr:         float = 3e-4
     batch_size: int   = 64
     epochs:     int   = 150
-    warmup:     int   = 10      # warmup epochs
-    aug_factor: int   = 20      # augmentation multiplier
-    device:     str   = "cuda" if torch.cuda.is_available() else "cpu"
+    warmup:       int   = 10      # warmup epochs
+    aug_factor:   int   = 3       # augmentation multiplier
+    ckpt_interval: int  = 25      # save checkpoint every N epochs (0 = disabled)
+    val_split:    float = 0.1     # fraction of pairs held out for validation
+    device:       str   = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ---------------------------------------------------------------------------
 # Data
@@ -353,17 +355,49 @@ def export(model: Transformer, path: str) -> None:
 # Training
 # ---------------------------------------------------------------------------
 
+def _eval_loss(model: Transformer, dataset: "QADataset",
+               batch_size: int, device: str) -> float:
+    """Return average per-response-token cross-entropy on dataset."""
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    total_loss = 0.0
+    total_tok  = 0
+    model.eval()
+    with torch.no_grad():
+        for x, y, m in loader:
+            x, y, m = x.to(device), y.to(device), m.to(device)
+            logits = model(x)
+            loss   = F.cross_entropy(logits.view(-1, VOCAB), y.view(-1),
+                                     reduction="none", ignore_index=PAD)
+            total_loss += (loss * m.view(-1).float()).sum().item()
+            total_tok  += m.float().sum().item()
+    return total_loss / max(total_tok, 1)
+
+
 def train(data_file: str, out_file: str, cfg: Config) -> None:
     pairs = load_pairs(data_file)
     if not pairs:
         raise SystemExit(f"No training pairs found in {data_file}")
     print(f"Pairs: {len(pairs)}", flush=True)
 
-    aug_pairs = augment_pairs(pairs, cfg.aug_factor)
+    aug_factor = cfg.aug_factor
+    print(f"Aug factor: {aug_factor}x  ({len(pairs) * aug_factor} examples)", flush=True)
+
+    # Validation split (before augmentation so val pairs are never seen in train)
+    val_pairs: list = []
+    train_pairs = pairs
+    if cfg.val_split > 0.0:
+        n_val = max(1, int(len(pairs) * cfg.val_split))
+        random.shuffle(pairs)
+        val_pairs   = pairs[:n_val]
+        train_pairs = pairs[n_val:]
+        print(f"Train: {len(train_pairs)}  Val: {len(val_pairs)}", flush=True)
+
+    aug_pairs = augment_pairs(train_pairs, aug_factor)
     dataset   = QADataset(aug_pairs, cfg.ctx_len)
+    val_dataset = QADataset(val_pairs, cfg.ctx_len) if val_pairs else None
     loader    = DataLoader(dataset, batch_size=cfg.batch_size,
                            shuffle=True, drop_last=False)
-    print(f"Examples (augmented): {len(dataset)}", flush=True)
+    print(f"Train examples (augmented): {len(dataset)}", flush=True)
 
     model = Transformer(cfg).to(cfg.device)
     print(f"Parameters: {model.n_params() / 1e6:.1f}M", flush=True)
@@ -410,20 +444,29 @@ def train(data_file: str, out_file: str, cfg: Config) -> None:
         if (epoch + 1) % 10 == 0 or epoch == 0:
             avg_loss = total_loss / max(total_tok, 1)
             lr_now   = opt.param_groups[0]["lr"]
-            sample_q, sample_a = random.choice(pairs)
+            sample_q, sample_a = random.choice(train_pairs)
             got = generate(model, sample_q)
             match = "OK" if got == sample_a else "  "
+            val_str = ""
+            if val_dataset:
+                val_loss = _eval_loss(model, val_dataset, cfg.batch_size, cfg.device)
+                val_str  = f"  val {val_loss:.4f}"
             print(
-                f"epoch {epoch+1:4d}  loss {avg_loss:.4f}  "
+                f"epoch {epoch+1:4d}  loss {avg_loss:.4f}{val_str}  "
                 f"lr {lr_now:.2e}  "
                 f"'{sample_q}' -> {got!r:16s} [{sample_a}] {match}",
                 flush=True,
             )
 
+        if cfg.ckpt_interval > 0 and (epoch + 1) % cfg.ckpt_interval == 0:
+            ckpt_path = out_file.replace(".bin", f"_ckpt{epoch+1}.bin")
+            export(model, ckpt_path)
+            print(f"  checkpoint saved: {ckpt_path}", flush=True)
+
     # Final sample pass
     print("\nSamples:", flush=True)
     seen: set = set()
-    for q, a in pairs:
+    for q, a in train_pairs:
         if a not in seen and len(seen) < 20:
             seen.add(a)
             got = generate(model, q)
@@ -444,26 +487,32 @@ def main() -> None:
     parser.add_argument("--dim",     type=int,   default=512)
     parser.add_argument("--heads",   type=int,   default=8)
     parser.add_argument("--ff",      type=int,   default=2048)
-    parser.add_argument("--ctx",     type=int,   default=64)
+    parser.add_argument("--ctx",     type=int,   default=96)
     parser.add_argument("--epochs",  type=int,   default=150)
     parser.add_argument("--batch",   type=int,   default=64)
     parser.add_argument("--lr",      type=float, default=3e-4)
     parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument("--aug",     type=int,   default=20,
-                        help="Augmentation multiplier (default 20x)")
+    parser.add_argument("--aug",          type=int,   default=3,
+                        help="Augmentation multiplier (default 3x)")
+    parser.add_argument("--ckpt-interval", type=int,  default=25,
+                        help="Save checkpoint every N epochs (0 = disabled)")
+    parser.add_argument("--val-split",    type=float, default=0.1,
+                        help="Fraction of pairs held out for validation (default 0.1)")
     args = parser.parse_args()
 
     cfg = Config(
-        n_layers   = args.layers,
-        d_model    = args.dim,
-        n_heads    = args.heads,
-        d_ff       = args.ff,
-        ctx_len    = args.ctx,
-        epochs     = args.epochs,
-        batch_size = args.batch,
-        lr         = args.lr,
-        dropout    = args.dropout,
-        aug_factor = args.aug,
+        n_layers      = args.layers,
+        d_model       = args.dim,
+        n_heads       = args.heads,
+        d_ff          = args.ff,
+        ctx_len       = args.ctx,
+        epochs        = args.epochs,
+        batch_size    = args.batch,
+        lr            = args.lr,
+        dropout       = args.dropout,
+        aug_factor    = args.aug,
+        ckpt_interval = args.ckpt_interval,
+        val_split     = args.val_split,
     )
 
     train(args.data, args.output, cfg)
