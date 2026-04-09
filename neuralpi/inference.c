@@ -221,11 +221,11 @@ static void linear_i8(float *y, const int8_t *W, float scale,
                        const float *b, const float *x, int out, int in)
 {
     for (int i = 0; i < out; i++) {
-        float acc = b[i];
+        float acc = 0.0f;
         const int8_t *row = W + (size_t)i * in;
         for (int j = 0; j < in; j++)
             acc += (float)row[j] * x[j];
-        y[i] = acc * scale;
+        y[i] = acc * scale + b[i];
     }
 }
 
